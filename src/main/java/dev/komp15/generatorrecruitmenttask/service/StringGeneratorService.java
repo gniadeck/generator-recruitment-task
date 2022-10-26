@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 @Slf4j
-@EnableAsync
 public class StringGeneratorService {
 
     private final JobRepository jobRepository;
