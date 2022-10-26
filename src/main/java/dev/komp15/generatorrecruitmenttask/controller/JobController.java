@@ -1,6 +1,7 @@
 package dev.komp15.generatorrecruitmenttask.controller;
 
 import dev.komp15.generatorrecruitmenttask.dto.JobCreationRequestDTO;
+import dev.komp15.generatorrecruitmenttask.dto.JobDTO;
 import dev.komp15.generatorrecruitmenttask.entity.Job;
 import dev.komp15.generatorrecruitmenttask.service.StringGeneratorService;
 import lombok.AllArgsConstructor;
@@ -17,7 +18,7 @@ public class JobController {
     private final StringGeneratorService service;
 
     @PostMapping("/job")
-    public ResponseEntity<Job> createJob(@RequestBody JobCreationRequestDTO creationRequest){
+    public ResponseEntity<JobDTO> createJob(@RequestBody JobCreationRequestDTO creationRequest){
         return ResponseEntity.ok(service.addJob(creationRequest));
     }
 
@@ -27,7 +28,7 @@ public class JobController {
     }
 
     @GetMapping("/job/running")
-    public ResponseEntity<List<JobCreationRequestDTO>> getRunningJobs(){
+    public ResponseEntity<List<JobDTO>> getRunningJobs(){
         return ResponseEntity.ok(service.getRunningJobs());
     }
 

@@ -1,7 +1,9 @@
 package dev.komp15.generatorrecruitmenttask.service;
 
 import dev.komp15.generatorrecruitmenttask.dto.JobCreationRequestDTO;
+import dev.komp15.generatorrecruitmenttask.dto.JobDTO;
 import dev.komp15.generatorrecruitmenttask.entity.Job;
+import dev.komp15.generatorrecruitmenttask.entity.JobStatus;
 import dev.komp15.generatorrecruitmenttask.repository.GeneratedStringRepository;
 import dev.komp15.generatorrecruitmenttask.repository.JobRepository;
 import lombok.AllArgsConstructor;
@@ -35,7 +37,7 @@ public class StringGeneratorServiceTest {
         JobCreationRequestDTO request = new JobCreationRequestDTO(
                 1L,100L,getAllCharacters(), 500L
         );
-        List<Job> runningJobs = new ArrayList<>();
+        List<JobDTO> runningJobs = new ArrayList<>();
         for(int i = 0; i < 2000; i++){
             runningJobs.add(service.addJob(request));
         }
@@ -43,7 +45,7 @@ public class StringGeneratorServiceTest {
         while(true){
             Thread.sleep(500);
             boolean threadsWorking = runningJobs.stream()
-                    .anyMatch(j -> !j.getIsDone());
+                    .anyMatch(j -> j.getStatus().equals(JobStatus.EXECUTING));
 //            System.out.println("Running jobs: " + service.getRunningJobs());
             if(!threadsWorking) break;
         }

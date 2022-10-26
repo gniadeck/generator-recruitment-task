@@ -17,7 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 public class Job {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
     @CreationTimestamp
     private LocalDateTime submitTime;
@@ -27,19 +27,21 @@ public class Job {
     private Long maxLength;
     @NotEmpty
     private Character[] chars;
-    @OneToMany
+    @OneToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @JoinColumn(name = "job_id")
     private Set<GeneratedString> generatedStrings;
     @Positive
     private Long jobSize;
     @NotNull
-    private Boolean isDone;
+    private JobStatus status;
+    private int percentageDone;
 
     public Job(JobCreationRequestDTO creationRequest){
         this.minLength = creationRequest.getMinLength();
         this.maxLength = creationRequest.getMaxLength();
         this.chars = creationRequest.getChars();
         this.jobSize = creationRequest.getJobSize();
-        this.isDone = false;
+        this.status = JobStatus.PENDING;
         this.generatedStrings = new HashSet<>();
     }
 }
