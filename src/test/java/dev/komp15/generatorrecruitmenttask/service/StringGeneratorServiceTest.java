@@ -6,6 +6,7 @@ import dev.komp15.generatorrecruitmenttask.entity.Job;
 import dev.komp15.generatorrecruitmenttask.entity.JobStatus;
 import dev.komp15.generatorrecruitmenttask.repository.GeneratedStringRepository;
 import dev.komp15.generatorrecruitmenttask.repository.JobRepository;
+import dev.komp15.generatorrecruitmenttask.utils.exceptions.NotValidException;
 import lombok.AllArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -13,12 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.transaction.Transactional;
+import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
@@ -57,10 +58,75 @@ public class StringGeneratorServiceTest {
 //        System.out.println(jobRepository.findById(runningJobs.get(0).getId()).orElseThrow());
     }
 
+    private Character[] getAmountOfCharacters(int amount){
+        return Arrays.stream(getAllCharacters())
+                .limit(amount)
+                .toArray(Character[]::new);
+    }
+
     private Character[] getAllCharacters(){
         return new Character[]{'a','b','c','d','e','f','g','h','i','j','k','l','m',
                 'n','o','p','r','s','t','u','w','x','y','z'};
     }
 
+    @Test
+    public void addJobShouldThrowOnJobsizeBiggerThanMaximum(){
+        JobCreationRequestDTO jobCreationRequestDTO = JobCreationRequestDTO.builder()
+                .minLength(1L)
+                .maxLength(10L)
+                .chars(getAmountOfCharacters(3))
+                .jobSize(1000000L)
+                .build();
+
+        assertThrows(NotValidException.class, () -> service.addJob(jobCreationRequestDTO));
+    }
+
+    @Test
+    public void addJobShouldThrowOnMinLengthBiggerThanMaxLength(){
+        JobCreationRequestDTO jobCreationRequestDTO = JobCreationRequestDTO.builder()
+                .minLength(100L)
+                .maxLength(10L)
+                .chars(getAllCharacters())
+                .jobSize(1000000L)
+                .build();
+
+        assertThrows(NotValidException.class, () -> service.addJob(jobCreationRequestDTO));
+    }
+
+    @Test
+    public void addJobShouldThrowOnNegativeMinLength(){
+        JobCreationRequestDTO jobCreationRequestDTO = JobCreationRequestDTO.builder()
+                .minLength(-1L)
+                .maxLength(10L)
+                .chars(getAllCharacters())
+                .jobSize(100000L)
+                .build();
+
+        assertThrows(ConstraintViolationException.class, () -> service.addJob(jobCreationRequestDTO));
+    }
+
+    @Test
+    public void addJobShouldThrowOnNegativeMaxLength(){
+        JobCreationRequestDTO jobCreationRequestDTO = JobCreationRequestDTO.builder()
+                .minLength(1L)
+                .maxLength(-10L)
+                .chars(getAllCharacters())
+                .jobSize(100000L)
+                .build();
+
+        assertThrows(ConstraintViolationException.class, () -> service.addJob(jobCreationRequestDTO));
+    }
+
+    @Test
+    public void addJobShouldThrowOnEmptyChars(){
+        JobCreationRequestDTO jobCreationRequestDTO = JobCreationRequestDTO.builder()
+                .minLength(1L)
+                .maxLength(-10L)
+                .chars(new Character[0])
+                .jobSize(100000L)
+                .build();
+
+        assertThrows(NotValidException.class, () -> service.addJob(jobCreationRequestDTO));
+    }
 
 }

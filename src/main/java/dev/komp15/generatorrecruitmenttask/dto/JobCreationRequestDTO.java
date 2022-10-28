@@ -2,10 +2,12 @@ package dev.komp15.generatorrecruitmenttask.dto;
 
 import dev.komp15.generatorrecruitmenttask.entity.Job;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @AllArgsConstructor
 @Data
+@Builder
 public class JobCreationRequestDTO {
     private Long minLength;
     private Long maxLength;
