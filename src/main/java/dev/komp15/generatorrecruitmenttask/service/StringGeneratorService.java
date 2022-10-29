@@ -1,75 +1,96 @@
 package dev.komp15.generatorrecruitmenttask.service;
 
-import dev.komp15.generatorrecruitmenttask.dto.JobCreationRequestDTO;
-import dev.komp15.generatorrecruitmenttask.dto.JobDTO;
 import dev.komp15.generatorrecruitmenttask.entity.GeneratedString;
 import dev.komp15.generatorrecruitmenttask.entity.Job;
 import dev.komp15.generatorrecruitmenttask.entity.JobStatus;
 import dev.komp15.generatorrecruitmenttask.repository.GeneratedStringRepository;
 import dev.komp15.generatorrecruitmenttask.repository.JobRepository;
-import dev.komp15.generatorrecruitmenttask.utils.exceptions.NotValidException;
-import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.time.LocalDateTime;
 import java.util.Random;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
-@Service
-@AllArgsConstructor
 @Slf4j
+@Component
+@NoArgsConstructor
+@EnableAsync
 public class StringGeneratorService {
+    private Random random;
+    private JobRepository jobRepository;
+    private GeneratedStringRepository stringRepository;
 
-    private final JobRepository jobRepository;
-    private GeneratorWorker generatorWorker;
+    @Autowired
+    public StringGeneratorService(JobRepository jobRepository, GeneratedStringRepository stringRepository) {
+        this.jobRepository = jobRepository;
+        this.stringRepository = stringRepository;
+        this.random = new Random();
+    }
 
-    public JobDTO addJob(JobCreationRequestDTO request){
-        Job job = new Job(request);
+    @Async
+    @Transactional
+    public CompletableFuture<Job> execute(Job job) {
 
-        if(isValid(job)){
-            jobRepository.save(job);
-            generatorWorker.execute(job);
+        job = jobRepository.findById(job.getId()).orElseThrow();
+        Job doneJob = doJob(job);
+        finishJob(job);
+
+        return CompletableFuture.completedFuture(doneJob);
+    }
+    @Transactional
+    void finishJob(Job job){
+        job.setStatus(JobStatus.DONE);
+        job.setFinishedTime(LocalDateTime.now());
+    }
+
+    @Transactional
+    Job doJob(Job job){
+        try{
+            doGenerationForJob(job);
+        } catch(Throwable t){
+            t.printStackTrace();
+            log.error("Job " + job.getId() + " crashed!");
+            job.setStatus(JobStatus.CRASHED);
         }
 
-        return new JobDTO(job);
+        return job;
     }
 
-    private boolean isValid(Job job){
-        int maxJobSize = 1;
-        for(int i = 1; i < job.getChars().length; i++){
-            maxJobSize = maxJobSize *  i;
+    @Transactional
+    void doGenerationForJob(Job job){
+        for(int i = 0; i < job.getJobSize(); i++){
+            if(i % 10000 == 0) log.info("Generating strings for job id " + job.getId());
+            generateSingleStringForJob(job);
         }
-        log.info("Max job size for job " + job.getId() + " - " + maxJobSize);
+    }
 
-        boolean isValid = job.getMinLength() <= job.getMaxLength() && maxJobSize >= job.getJobSize();
-
-        if(!isValid && !(job.getMinLength() <= job.getMaxLength())){
-            throw new NotValidException("Minimum length should be smaller than maximum length");
-        } else if(!isValid && !(maxJobSize >= job.getJobSize())){
-            throw new NotValidException("Requested job size is not achievable!");
+    private void generateSingleStringForJob(Job job){
+        StringBuilder builder = new StringBuilder();
+        for(int i = 0; i < generateStringLength(job); i++){
+            builder.append(generateRandomCharacter(job));
         }
-
-        return isValid;
+        addToJob(builder.toString(), job);
     }
 
-
-    public Job findJobById(Long id) {
-        return jobRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("Job with id " + id + " does not exist."));
+    @Transactional
+    void addToJob(String s, Job job){
+        GeneratedString generatedString = new GeneratedString(s, job);
+        stringRepository.save(generatedString);
     }
 
-    public synchronized List<JobDTO> getRunningJobs() {
-       return jobRepository.findByStatusEquals(JobStatus.EXECUTING).stream()
-               .map(JobDTO::new)
-               .collect(Collectors.toList());
+    private long generateStringLength(Job job){
+        return job.getMinLength() + random.nextLong(job.getMaxLength()-job.getMinLength());
     }
+
+    private char generateRandomCharacter(Job job){
+        return job.getChars()[random.nextInt(job.getChars().length)];
+    }
+
 
 }

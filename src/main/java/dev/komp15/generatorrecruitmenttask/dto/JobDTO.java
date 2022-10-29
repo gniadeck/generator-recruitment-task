@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.komp15.generatorrecruitmenttask.entity.Job;
 import dev.komp15.generatorrecruitmenttask.entity.JobStatus;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class JobDTO {
     private Long id;
     private Long minLength;

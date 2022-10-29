@@ -1,6 +1,8 @@
 package dev.komp15.generatorrecruitmenttask.entity;
 
 import dev.komp15.generatorrecruitmenttask.dto.JobCreationRequestDTO;
+import dev.komp15.generatorrecruitmenttask.utils.validation.job.JobMinLengthSmallerThanMaxLength;
+import dev.komp15.generatorrecruitmenttask.utils.validation.job.ValidJobSize;
 import lombok.*;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,6 +23,8 @@ import java.util.Set;
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
+@ValidJobSize
+@JobMinLengthSmallerThanMaxLength
 public class Job {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
@@ -45,10 +49,10 @@ public class Job {
     private JobStatus status;
 
     public Job(JobCreationRequestDTO creationRequest){
-        this.minLength = creationRequest.getMinLength();
-        this.maxLength = creationRequest.getMaxLength();
-        this.chars = creationRequest.getChars();
-        this.jobSize = creationRequest.getJobSize();
+        this.minLength = creationRequest.minLength();
+        this.maxLength = creationRequest.maxLength();
+        this.chars = creationRequest.chars();
+        this.jobSize = creationRequest.jobSize();
         this.status = JobStatus.EXECUTING;
         this.generatedStrings = new HashSet<>();
     }
