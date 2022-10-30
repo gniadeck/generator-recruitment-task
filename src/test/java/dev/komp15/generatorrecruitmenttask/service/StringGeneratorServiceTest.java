@@ -42,7 +42,7 @@ public class StringGeneratorServiceTest {
         for(int i = 0; i < 10; i++){
 
             int jobSize = random.nextInt(300)+1;
-            Job testedJob = getJobWithJobSize(jobSize);
+            Job testedJob = testUtils.getJobWithJobSize(jobSize);
             testUtils.saveJob(testedJob);
 
             Job result = stringGeneratorService.execute(testedJob).get();
@@ -59,7 +59,7 @@ public class StringGeneratorServiceTest {
     @Test
     @Rollback
     public void executeShouldSetJobStatusToDone() throws ExecutionException, InterruptedException {
-        Job testedJob = getJobWithJobSize(10);
+        Job testedJob = testUtils.getJobWithJobSize(10);
         jobRepository.save(testedJob);
         assertEquals(JobStatus.DONE, stringGeneratorService.execute(testedJob).get().getStatus());
     }
@@ -73,7 +73,7 @@ public class StringGeneratorServiceTest {
 
         for(int i = 0; i < 10; i++){
             int jobSize = random.nextInt(300);
-            Job testedJob = getJobWithJobSize(jobSize);
+            Job testedJob = testUtils.getJobWithJobSize(jobSize);
             testUtils.saveJob(testedJob);
             Job doneJob = stringGeneratorService.execute(testedJob).get();
             doneJob = jobRepository.findById(doneJob.getId()).orElseThrow();
@@ -91,8 +91,8 @@ public class StringGeneratorServiceTest {
     @Rollback
     public void executeShouldCompleteSmallerJobsBeforeBigger() throws ExecutionException, InterruptedException {
 
-        Job smallJob = getJobWithJobSize(100);
-        Job bigJob = getJobWithJobSize(10000);
+        Job smallJob = testUtils.getJobWithJobSize(100);
+        Job bigJob = testUtils.getJobWithJobSize(10000);
         jobRepository.save(smallJob);
         jobRepository.save(bigJob);
 
@@ -120,7 +120,7 @@ public class StringGeneratorServiceTest {
 
         for(int i = 0; i < 10; i++){
             int jobSize = random.nextInt(300)+1;
-            Job testedJob = getJobWithJobSize(jobSize);
+            Job testedJob = testUtils.getJobWithJobSize(jobSize);
             testUtils.saveJob(testedJob);
             Job doneJob = stringGeneratorService.execute(testedJob).get();
             doneJob = jobRepository.findById(doneJob.getId()).orElseThrow();
@@ -142,36 +142,6 @@ public class StringGeneratorServiceTest {
         }
 
     }
-
-    private Job getJobWithJobSize(int size){
-        return Job.builder()
-                .minLength(1L)
-                .maxLength(10L)
-                .chars(getAllCharacters())
-                .generatedStrings(new HashSet<>())
-                .jobSize((long) size)
-                .status(JobStatus.EXECUTING)
-                .build();
-    }
-
-
-
-    private Character[] getAllCharacters(){
-        return new Character[]{'a','b','c','d','e','f','g','h','i','j','k','l','m',
-                'n','o','p','r','s','t','u','w','x','y','z'};
-    }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 }

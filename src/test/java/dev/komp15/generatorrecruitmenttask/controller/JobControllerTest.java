@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import dev.komp15.generatorrecruitmenttask.TestUtils;
 import dev.komp15.generatorrecruitmenttask.dto.ExceptionDTO;
 import dev.komp15.generatorrecruitmenttask.dto.JobCreationRequestDTO;
 import dev.komp15.generatorrecruitmenttask.dto.JobDTO;
@@ -47,6 +48,8 @@ public class JobControllerTest {
     private JobRepository jobRepository;
     @Autowired
     private WebApplicationContext wac;
+    @Autowired
+    private TestUtils testUtils;
     private MockMvc mockMvc;
     private ObjectMapper objectMapper = new ObjectMapper();
     @MockBean
@@ -64,7 +67,7 @@ public class JobControllerTest {
     @Test
     @Rollback
     public void getJobShouldGetJob() throws Exception {
-        Job testJob = getJobWithJobSize(100);
+        Job testJob = testUtils.getJobWithJobSize(100);
         jobRepository.save(testJob);
 
         MvcResult response = mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/job/" + testJob.getId()))
@@ -89,7 +92,9 @@ public class JobControllerTest {
     @Test
     public void runningJobsShouldReturnRunningJobs() throws Exception {
 
-        List<Job> runningJobs = List.of(getJobWithJobSize(50), getJobWithJobSize(100), getJobWithJobSize(25));
+        List<Job> runningJobs = List.of(testUtils.getJobWithJobSize(50),
+                testUtils.getJobWithJobSize(100), testUtils.getJobWithJobSize(25));
+
         jobRepository.saveAll(runningJobs);
 
         MvcResult response = mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/job/running"))
@@ -106,12 +111,12 @@ public class JobControllerTest {
     @Transactional
     @Rollback
     public void postJobShouldDoJob() throws Exception {
-        Job testJob = getJobWithJobSize(1);
+        Job testJob = testUtils.getJobWithJobSize(1);
 
 
         MvcResult response = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/job")
                         .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(getCreationRequestFromJob(testJob))))
+                        .content(objectMapper.writeValueAsString(testUtils.getCreationRequestFromJob(testJob))))
                 .andReturn();
 
         JobDTO returnedJobDTO = objectMapper.readValue(response.getResponse().getContentAsString(), JobDTO.class);
@@ -125,29 +130,10 @@ public class JobControllerTest {
 
     }
 
-    private JobCreationRequestDTO getCreationRequestFromJob(Job job) {
-        return new JobCreationRequestDTO(
-                job.getMinLength(),
-                job.getMaxLength(),
-                job.getChars(),
-                job.getJobSize()
-        );
-    }
 
 
-    private Job getJobWithJobSize(int size) {
-        return Job.builder()
-                .minLength(1L)
-                .maxLength(10L)
-                .chars(getAllCharacters())
-                .generatedStrings(new HashSet<>())
-                .jobSize((long) size)
-                .status(JobStatus.EXECUTING)
-                .build();
-    }
 
-    private Character[] getAllCharacters() {
-        return new Character[]{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-                'n', 'o', 'p', 'r', 's', 't', 'u', 'w', 'x', 'y', 'z'};
-    }
+
+
+
 }
